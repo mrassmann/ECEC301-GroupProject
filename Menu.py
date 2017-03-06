@@ -1,7 +1,7 @@
 from Tkinter import *
 
 def getImgName():
-    return ['Test1','Test2', "Test3"]
+    return ['Test1','Test2', "Test3", "Test4"]
 
 def start():
     pass
