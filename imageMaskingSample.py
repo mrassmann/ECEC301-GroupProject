@@ -2,10 +2,21 @@ from scipy import misc
 import numpy as np
 from PIL import Image, ImageDraw
 
+# Radius of Hexagon Required
+r = 50
+# Center Points
+cX = 50
+cY = 50
+
+# Creates the mask and masks the image
+# PARAM (maskBase) - Base image the mask is derived from
 def maskImage(maskBase):
     image = misc.imread("canvas_rose_red.gif")
     row, col, z = image.shape
+    # Getting base image data to create the mask
     mask = np.array(maskBase.getdata()).reshape(maskBase.size[0], maskBase.size[1], 3)
+
+    # Creating the mask
     if z == 3:
         image = np.dstack((image, np.full((row, col), 255)))
         mask = np.dstack((mask, np.full((row, col), 255)))
@@ -15,27 +26,29 @@ def maskImage(maskBase):
                 mask[r][c] = (0, 0, 0, 0)
             else:
                 mask[r][c] = (1, 1, 1, 1)
-
     print mask
+
+    # Mask the image and save it
     maskedImage = np.ma.masked_array(image, mask=mask)
     maskedImage = maskedImage.filled([0, 0, 0, 0])
     misc.toimage(maskedImage, cmin=0.0, cmax=256.0).save('outfile.png')
 
-
-def hexagon_generator():
-    """Generator for coordinates in a hexagon."""
+# Returns the points on a hexagon centered at 50, 50 for this demo
+def hexagonPoints():
     points = []
     for k in range(6):
-        x, y = 50 + 50 * np.cos(k * np.pi / 3), 50 + 50 * np.sin(k * np.pi / 3)
+        x, y = cX + r * np.cos(k * np.pi / 3), cY + r * np.sin(k * np.pi / 3)
         points.extend([x, y])
     return points
 
-def main():
+# Creates the image to use as the mask.
+# This image is never saved as it is passed as a parameter to maskImage
+def drawMaskImage():
     image2 = Image.new('RGB', (100, 100), 'white')
     draw = ImageDraw.Draw(image2)
-    hexagon = hexagon_generator()
+    hexagon = hexagonPoints()
     draw.polygon(hexagon, fill='black')
     maskImage(image2)
 
-main()
+drawMaskImage()
 
