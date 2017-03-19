@@ -1,7 +1,7 @@
 from Tkinter import *
 import numpy as np
 from scipy import misc
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageTk
 
 class HexagonGame(object):
     def __init__(self, num_rings, img_path):
@@ -9,6 +9,8 @@ class HexagonGame(object):
         self.imgPath = img_path
         self.rings = []
         self.hexIDs = []  # A list of IDs for all your hexagons
+        self.imgIDs = []
+        self.images = {}
         self.canvas1 = None
         self.label1 = None
         self.r = 50
@@ -104,14 +106,14 @@ class HexagonGame(object):
                         # Extending it all into a list
 
                     # Connecting all points together forming the hexagon and giving it a hexagon identification number
-                    newHexID = self.canvas1.create_polygon(points, activefill="yellow", fill=colour, outline=outline, width=1)
+                    newHexID = self.canvas1.create_polygon(points, activefill="yellow", fill="", outline=outline, width=3)
                     self.hexIDs.append(newHexID)
                     # Appending hexagon identification into a list
                     # Calling a method with image name from mask and adding it as a tag
                     # Placeholder for the time being
 
                     # Adding tags to each hexagon: Identification, Ring Number, x Center Value, y Center Value
-                    self.canvas1.itemconfig(newHexID, tags=(newHexID, str(ring_number), hexCenter[0], hexCenter[1]))
+                    self.canvas1.itemconfig(newHexID, tags=(newHexID, str(ring_number), int(round(hexCenter[0])), int(round(hexCenter[1]))))
 
         # Deleting the center hexagon that has been tagged with "100" using a for loop and getting tags
         # These include rings outside of 2, or 3 if its included, and the center
@@ -123,28 +125,32 @@ class HexagonGame(object):
         for item in removedList:
             self.hexIDs.remove(item)
 
-    ################################ Image Masking #################################
+    ################################################## Image Masking ##################################################
     def maskImage(self, imgToMask):
+        if imgToMask.mode == "RGB":
+            imgToMask = np.array(imgToMask.getdata()).reshape(imgToMask.size[0], imgToMask.size[1], 3)
+        else:
+            imgToMask = np.array(imgToMask.getdata()).reshape(imgToMask.size[0], imgToMask.size[1], 4)
+
         row, col, z = imgToMask.shape
         # Getting base image data to create the mask
         mask = np.array(self.baseMask.getdata()).reshape(self.baseMask.size[0], self.baseMask.size[1], 3)
 
         # Creating the mask
+        mask = np.dstack((mask, np.full((row, col), 255)))
         if z == 3:
             imgToMask = np.dstack((imgToMask, np.full((row, col), 255)))
-            mask = np.dstack((mask, np.full((row, col), 255)))
         for r in range(0, row):
             for c in range(0, col):
                 if np.all(mask[r][c] == [0, 0, 0, 255]):
                     mask[r][c] = (0, 0, 0, 0)
                 else:
                     mask[r][c] = (1, 1, 1, 1)
-        print mask
 
         # Mask the image and save it
         maskedImage = np.ma.masked_array(imgToMask, mask=mask)
         maskedImage = maskedImage.filled([0, 0, 0, 0])
-        misc.toimage(maskedImage, cmin=0.0, cmax=256.0).save('outfile.png')
+        return misc.toimage(maskedImage, cmin=0.0, cmax=256.0)
 
     # Returns the points on a hexagon centered at 50, 50 for this demo
     def hexagonPoints(self, imageSize):
@@ -170,7 +176,8 @@ class HexagonGame(object):
         right = x + self.r
         lower = y + self.r
         cropBox = (left, upper, right, lower)
-        self.maskImage(bg.crop(cropBox))
+        return self.maskImage(bg.crop(cropBox))
+    ###################################################################################################################
 
     # Defining a method that registers mouse clicks and changes hexagon colour to red
     def click(self, event):
@@ -202,8 +209,15 @@ class HexagonGame(object):
         # Calls method draw_hexagons() to draw in the hexagons
         self.draw_hexagons()
         for hex in self.hexIDs:
-            int(self.canvas1.gettags(hex)[0])
+            x = int(self.canvas1.gettags(hex)[2])
+            y = int(self.canvas1.gettags(hex)[3])
+            hexBG = ImageTk.PhotoImage(self.sliceBackground(x, y))
+            imgId = self.canvas1.create_image(x, y, image=hexBG)
+            self.imgIDs = imgId
+            self.images[imgId] = hexBG
+            self.canvas1.tag_raise(hex)
+            root.update()
         root.mainloop()
 
-HexagonGame(3,"")
+HexagonGame(3, "images/797668ad0ebe3e0da96f51f967641971.jpg")
 
