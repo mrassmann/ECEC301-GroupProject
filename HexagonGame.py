@@ -123,7 +123,7 @@ class HexagonGame(object):
         for hex in self.hexIDs:
             if int(self.canvas1.gettags(hex)[1]) == 100:
                 self.canvas1.itemconfig(hex, fill="white")
-                self.whiteHex = hex
+                self.canvas1.addtag_withtag("prev_selected", hex)
         #for item in removedList:
         #    self.hexIDs.remove(item)
 
@@ -180,48 +180,32 @@ class HexagonGame(object):
         cropBox = (left, upper, right, lower)
         return self.maskImage(bg.crop(cropBox))
     ###################################################################################################################
-    def move_hex_to_empty(self):
+
+    def is_solved(self):
+        if self.imgIDs == sorted(self.imgIDs):
+            return True
+        else:
+            return False
+
+    def move_hex_to_empty(self, x, y):
         if (self.can_this_hex_move_to_empty()):
-            move_me_hex = self.canvas1.find_withtag("selected")
-            white_hex = self.whiteHex
-            old_hex = move_me_hex[0]
-            new_hex = white_hex
-            old_x = int(self.canvas1.gettags(old_hex)[2])
-            new_x = int(self.canvas1.gettags(new_hex)[2])
-            old_y = int(self.canvas1.gettags(old_hex)[3])
-            new_y = int(self.canvas1.gettags(new_hex)[3])
-            old_hexBG = ImageTk.PhotoImage(self.sliceBackground(new_x, new_y))
-            new_hexBG = ImageTk.PhotoImage(self.sliceBackground(old_x, old_y))
-            old_imgId = self.canvas1.create_image(old_x, old_y, image=old_hexBG)
-            new_imgId = self.canvas1.create_image(new_x, new_y, image=new_hexBG)
-            self.imgIDs[old_hex], self.imgIDs[new_hex] = self.imgIDs[new_hex], self.imgIDs[old_hex]
-            self.images[old_imgId] = old_hexBG
-            self.images[new_imgId] = new_hexBG
-            self.canvas1.tag_raise(old_hex)
-            self.canvas1.tag_raise(new_hex)
-            self.whiteHex = move_me_hex[0]
-            self.canvas1.itemconfig(white_hex, fill="")
-            self.canvas1.tag_raise(white_hex)
-            self.canvas1.itemconfig(self.whiteHex, fill="white")
-            self.canvas1.tag_raise(self.whiteHex)
-            self.canvas1.dtag(move_me_hex, "selected")
-            self.canvas1.update()
+            selected = self.canvas1.find_closest(x,y)[0]
+            white = self.canvas1.find_withtag("prev_selected")[0]
+            self.canvas1.dtag(white, "prev_selected")
+            self.canvas1.addtag_withtag("prev_selected", selected)
+            self.images[selected+37], self.images[white+37] = self.images[white+37], self.images[selected+37]
+            self.imgIDs[selected], self.imgIDs[white] = self.imgIDs[white], self.imgIDs[selected]
+            self.canvas1.itemconfig((selected+37), image = self.images[selected+37])
+            self.canvas1.itemconfig(selected, fill="white")
+            self.canvas1.itemconfig((white+37), image = self.images[white+37])
+            self.canvas1.itemconfig(white, fill="")
     def can_this_hex_move_to_empty(self):
         return True
     # Defining a method that registers mouse clicks and changes hexagon colour to red
     def click(self, event):
         if self.canvas1.find_withtag(CURRENT):
-            for hex in self.hexIDs:
-                if hex is not self.whiteHex:
-                    self.canvas1.itemconfig(hex, fill="")
-                    self.canvas1.tag_raise(hex)
-                else:
-                    self.canvas1.itemconfig(hex, fill="white")
-                    self.canvas1.tag_raise(hex)
-            # CURRENT takes in all the tags from the currently clicked hexagon tile
             self.canvas1.tag_raise(CURRENT)
-            self.canvas1.addtag_closest("selected", event.x, event.y)
-            self.move_hex_to_empty()
+            self.move_hex_to_empty(event.x, event.y)
             self.canvas1.update()
 
     # Defining a method that starts the game
