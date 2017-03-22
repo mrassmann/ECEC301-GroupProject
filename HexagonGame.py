@@ -115,7 +115,9 @@ class HexagonGame(object):
                     # Placeholder for the time being
 
                     # Adding tags to each hexagon: Identification, Ring Number, x Center Value, y Center Value
-                    self.canvas1.itemconfig(newHexID, tags=(newHexID, str(ring_number), int(round(hexCenter[0])), int(round(hexCenter[1]))))
+                    self.canvas1.itemconfig(newHexID, tags=(newHexID, str(ring_number), int(round(hexCenter[0])),
+                                                            int(round(hexCenter[1])), int(round(hexCenter[0])),
+                                                                      int(round(hexCenter[1]))))
 
         # Deleting the center hexagon that has been tagged with "100" using a for loop and getting tags
         # These include rings outside of 2, or 3 if its included, and the center
@@ -208,6 +210,45 @@ class HexagonGame(object):
             self.move_hex_to_empty(event.x, event.y)
             self.canvas1.update()
 
+    def moves(self):
+        # Picks the correct move
+        # The moves are set up in the clock face
+        moveDirection = None
+        clock1200 = [0.0, -np.sqrt(3) * self.r]
+        clock0600 = [0.0, +np.sqrt(3) * self.r]
+        clock0200 = [3.0 * self.r / 2.0, -np.sqrt(3) * self.r / 2.0]
+        clock0400 = [3.0 * self.r / 2.0, +np.sqrt(3) * self.r / 2.0]
+        clock1000 = [-3.0 * self.r / 2.0, -np.sqrt(3) * self.r / 2.0]
+        clock0800 = [-3.0 * self.r / 2.0, +np.sqrt(3) * self.r / 2.0]
+
+        return moveDirection
+        # dx, dy = random.choice(direction)  # Total move to perform.
+        # self.canvas1.move(self.hexID, dx, dy)
+
+    def moveTile(self):
+        self.canvas1.find_withtag(CURRENT)
+        self.canvas1.itemconfig(CURRENT, command = self.moves)
+
+
+        pass
+
+    def scramble(self):
+        for hex in self.hexIDs:
+            #if hex
+            pass
+        pass
+
+
+    def checkWin(self):
+        for hex in self.hexIDs:
+            if self.canvas1.gettags(hex)[2] == self.canvas1.gettags(hex)[4] and self.canvas1.gettags(hex)[3] == self.canvas1.gettags(hex)[5]:
+                # tags 4 and 5 need to be updated x, y center points as tiles are moved
+                # moving of tiles should
+                # need tag 4 to be current x position after tiles have been moved(solved)
+                # need tag 5 to be current y position after tiles have been moved(solved)
+                pass
+        pass
+
     # Defining a method that starts the game
     def run_game(self):
         # Standard Tkinter stuff
@@ -238,6 +279,10 @@ class HexagonGame(object):
             self.images[imgId] = hexBG
             self.canvas1.tag_raise(hex)
             root.update()
+
+        # tiles moving etc etc
+        # self.checkWin()
+
         root.mainloop()
 
 HexagonGame(3, "images/797668ad0ebe3e0da96f51f967641971.jpg")
