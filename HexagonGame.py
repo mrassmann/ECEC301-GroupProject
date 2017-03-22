@@ -2,6 +2,7 @@ from Tkinter import *
 import numpy as np
 from scipy import misc
 from PIL import Image, ImageDraw, ImageTk
+import time
 
 class HexagonGame(object):
     def __init__(self, num_rings, img_path):
@@ -17,6 +18,7 @@ class HexagonGame(object):
         self.center = ()
         self.baseMask = self.drawMaskImage()
         self.run_game()
+        self.whiteHex = 0
 
     # Defining the center point of the puzzle
     def center_point(self, m, n):
@@ -122,10 +124,10 @@ class HexagonGame(object):
         removedList = []
         for hex in self.hexIDs:
             if int(self.canvas1.gettags(hex)[1]) == 100:
-                self.canvas1.delete(hex)
-                removedList.append(hex)
-        for item in removedList:
-            self.hexIDs.remove(item)
+                self.canvas1.itemconfig(hex, fill="white")
+                self.whiteHex = hex
+        #for item in removedList:
+        #    self.hexIDs.remove(item)
 
     ################################################## Image Masking ##################################################
     def maskImage(self, imgToMask):
@@ -180,13 +182,48 @@ class HexagonGame(object):
         cropBox = (left, upper, right, lower)
         return self.maskImage(bg.crop(cropBox))
     ###################################################################################################################
-
+    def move_hex_to_empty(self):
+        if (self.can_this_hex_move_to_empty()):
+            move_me_hex = self.canvas1.find_withtag("selected")
+            white_hex = self.whiteHex
+            old_hex = move_me_hex[0]
+            new_hex = white_hex
+            old_x = int(self.canvas1.gettags(old_hex)[2])
+            new_x = int(self.canvas1.gettags(new_hex)[2])
+            old_y = int(self.canvas1.gettags(old_hex)[3])
+            new_y = int(self.canvas1.gettags(new_hex)[3])
+            old_hexBG = ImageTk.PhotoImage(self.sliceBackground(new_x, new_y))
+            new_hexBG = ImageTk.PhotoImage(self.sliceBackground(old_x, old_y))
+            old_imgId = self.canvas1.create_image(old_x, old_y, image=old_hexBG)
+            new_imgId = self.canvas1.create_image(new_x, new_y, image=new_hexBG)
+            self.imgIDs[old_hex], self.imgIDs[new_hex] = self.imgIDs[new_hex], self.imgIDs[old_hex]
+            self.images[old_imgId] = old_hexBG
+            self.images[new_imgId] = new_hexBG
+            self.canvas1.tag_raise(old_hex)
+            self.canvas1.tag_raise(new_hex)
+            self.whiteHex = move_me_hex[0]
+            self.canvas1.itemconfig(white_hex, fill="")
+            self.canvas1.tag_raise(white_hex)
+            self.canvas1.itemconfig(self.whiteHex, fill="white")
+            self.canvas1.tag_raise(self.whiteHex)
+            self.canvas1.dtag(move_me_hex, "selected")
+            self.canvas1.update()
+    def can_this_hex_move_to_empty(self):
+        return True
     # Defining a method that registers mouse clicks and changes hexagon colour to red
     def click(self, event):
         if self.canvas1.find_withtag(CURRENT):
+            for hex in self.hexIDs:
+                if hex is not self.whiteHex:
+                    self.canvas1.itemconfig(hex, fill="")
+                    self.canvas1.tag_raise(hex)
+                else:
+                    self.canvas1.itemconfig(hex, fill="white")
+                    self.canvas1.tag_raise(hex)
             # CURRENT takes in all the tags from the currently clicked hexagon tile
-            colour = "red"
-            self.canvas1.itemconfig(CURRENT, fill=colour)
+            self.canvas1.tag_raise(CURRENT)
+            self.canvas1.addtag_closest("selected", event.x, event.y)
+            self.move_hex_to_empty()
             self.canvas1.update()
 
     def moves(self):
@@ -254,7 +291,7 @@ class HexagonGame(object):
             y = int(self.canvas1.gettags(hex)[3])
             hexBG = ImageTk.PhotoImage(self.sliceBackground(x, y))
             imgId = self.canvas1.create_image(x, y, image=hexBG)
-            self.imgIDs = imgId
+            self.imgIDs.append(imgId)
             self.images[imgId] = hexBG
             self.canvas1.tag_raise(hex)
             root.update()
@@ -265,4 +302,3 @@ class HexagonGame(object):
         root.mainloop()
 
 HexagonGame(3, "images/797668ad0ebe3e0da96f51f967641971.jpg")
-
