@@ -3,6 +3,7 @@ import numpy as np
 from scipy import misc
 from PIL import Image, ImageDraw, ImageTk
 import math
+import time
 
 class HexagonGame(object):
     def __init__(self, num_rings, img_path):
@@ -14,6 +15,8 @@ class HexagonGame(object):
         self.boundaryIDs = []
         self.imgIDs = []
         self.images = {}
+        self.backgroundsDONTUSE = {}
+        self.moving = False
         self.canvas1 = None
         self.label1 = None
         self.r = 50
@@ -253,26 +256,29 @@ class HexagonGame(object):
         return self.maskImage(bg.crop(cropBox))
     ###################################################################################################################
 
-    def getAllCurrentCenterPoints(self):
+    def getAllCurrentCenterPoints(self, getBoundary):
         listCenPoints = []
         for hex in self.hexIDs:
             center = self.canvas1.coords(hex)[:2]
             center[0] = center[0] - self.r
             center[0] , center[1] = int(round(center[0])) , int(round(center[1]))
             listCenPoints.append(center)
+        if getBoundary:
+            for hex in self.boundaryIDs:
+                center = self.canvas1.coords(hex)[:2]
+                center[0] = center[0] - self.r
+                center[0] , center[1] = int(round(center[0])) , int(round(center[1]))
+                listCenPoints.append(center)
         return listCenPoints
     # Defining a method that registers mouse clicks and changes hexagon colour to red
     def click(self, event):
         if self.canvas1.find_withtag(CURRENT):
-            if int(self.canvas1.gettags(CURRENT)[0]) in self.removedList:
-                return
-            if int(self.canvas1.gettags(CURRENT)[0]) in self.boundaryIDs:
+            if int(self.canvas1.gettags(CURRENT)[0]) in self.boundaryIDs or self.moving:
                 return
             # CURRENT takes in all the tags from the currently clicked hexagon tile
-            colour = "red"
             hexId = self.canvas1.gettags(CURRENT)[0]
-            print self.getMoves(hexId)
-            self.canvas1.itemconfig(CURRENT, fill=colour)
+            moveToMake = self.getMoves(hexId)
+            self.moveTile(hexId, moveToMake, 0)
             self.canvas1.update()
 
 
@@ -283,13 +289,13 @@ class HexagonGame(object):
         centerpoint = self.canvas1.coords(hexId)[:2]
         centerpoint[0] = centerpoint[0] - self.r
         clockposition = -1
+        CurrentCenterPoints = self.getAllCurrentCenterPoints(True)
         for i in range(0,6,1):
             checkpoint = [centerpoint[0] + math.sqrt(3)*self.r*math.cos(math.radians(30 + 60*i)), centerpoint[1] + math.sqrt(3)*self.r*math.sin(math.radians(30 + 60*i))]
-            CurrentCenterPoints = self.getAllCurrentCenterPoints()
             checkpoint[0] , checkpoint[1] = int(round(checkpoint[0])), int(round(checkpoint[1]))
             if not checkpoint in CurrentCenterPoints:
                 clockposition = i
-
+        print clockposition
         clock1200 = [0.0, -np.sqrt(3) * self.r]
         clock0600 = [0.0, +np.sqrt(3) * self.r]
         clock0200 = [3.0 * self.r / 2.0, -np.sqrt(3) * self.r / 2.0]
@@ -298,25 +304,33 @@ class HexagonGame(object):
         clock0800 = [-3.0 * self.r / 2.0, +np.sqrt(3) * self.r / 2.0]
 
         positions = {}
-        positions[0] = clock1000
-        positions[1] = clock1200
-        positions[2] = clock0200
-        positions[3] = clock0400
-        positions[4] = clock0600
-        positions[5] = clock0800
+        positions[3] = clock1000
+        positions[4] = clock1200
+        positions[5] = clock0200
+        positions[0] = clock0400
+        positions[1] = clock0600
+        positions[2] = clock0800
         if clockposition == -1:
             return False
         return positions[clockposition]
         # dx, dy = random.choice(direction)  # Total move to perform.
         # self.canvas1.move(self.hexID, dx, dy)
 
-    def moveTile(self):
-        self.canvas1.find_withtag(CURRENT)
-        self.canvas1.itemconfig(CURRENT, command = self.moves)
-
-
-        pass
-
+    def moveTile(self, hexId, moveToMake, n):
+        if moveToMake == False:
+            return
+        dx, dy = moveToMake
+        self.moving = True
+        if n < 10:
+            deltax = dx / 10.0;
+            deltay = dy / 10.0  # Break up the move into 20 small steps for the animation.
+            self.canvas1.move(hexId, deltax, deltay)
+            imgId = self.images[int(hexId)]
+            self.canvas1.move(imgId, deltax, deltay)
+            self.root.after(20, self.moveTile, hexId, moveToMake, n + 1)
+        if n == 10:
+            self.moving = False
+            return
     def scramble(self):
         for hex in self.hexIDs:
             #if hex
@@ -338,6 +352,7 @@ class HexagonGame(object):
     def run_game(self):
         # Standard Tkinter stuff
         root = Tk()
+        self.root = root
         Tk.title = "Making Board Game"
 
         # Creating the canvas for the game
@@ -361,7 +376,8 @@ class HexagonGame(object):
             hexBG = ImageTk.PhotoImage(self.sliceBackground(x, y))
             imgId = self.canvas1.create_image(x, y, image=hexBG)
             self.imgIDs = imgId
-            self.images[imgId] = hexBG
+            self.backgroundsDONTUSE[hex] = hexBG
+            self.images[hex] = imgId
             self.canvas1.tag_raise(hex)
             root.update()
 
@@ -370,5 +386,5 @@ class HexagonGame(object):
 
         root.mainloop()
 
-HexagonGame(3, "images/797668ad0ebe3e0da96f51f967641971.jpg")
+HexagonGame(2, "images/797668ad0ebe3e0da96f51f967641971.jpg")
 
