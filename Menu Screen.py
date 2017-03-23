@@ -1,10 +1,9 @@
 from Tkinter import *
 import os
 import HexagonGame
-def startGame():
-    path = "images\\" + selectedImage
-    print path
-    hexGame = HexagonGame.HexagonGame(3, path)
+def startGame(numRing, radius):
+    path = "images/" + selectedImage
+    hexGame = HexagonGame.HexagonGame(numRing, path, radius)
     hexGame.startGame()
 project_root = Tk()
 project_root.title("Team 6 Hexagonal Puzzle Game")
@@ -39,13 +38,14 @@ for image in imageFiles:
     image_menu.add_command(label=image, command=lambda image=image: update_image(image))
 image_button.configure(menu=image_menu)
 
-#Opens Image in New Window
 
+start_button3Ring = Button(project_root, text="START with 3 Rings", command=lambda: startGame(3, 70))
+start_button3Ring.grid(row=5, column=3)
 
-start_button = Button(project_root, text="START", command=startGame)
-start_button.grid(row=5, column=3)
+start_button2Ring = Button(project_root, text="START with 2 Rings", command=lambda: startGame(2, 110))
+start_button2Ring.grid(row=5, column=2)
 
-quit_button = Button(project_root, text='QUIT', command=project_root.quit)
+quit_button = Button(project_root, text='QUIT', command=quit)
 quit_button.grid(row=6, column=0, sticky=W, pady=4)
 
-project_root.mainloop( )
+project_root.mainloop()
