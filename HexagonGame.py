@@ -3,7 +3,7 @@ import numpy as np
 from scipy import misc
 from PIL import Image, ImageDraw, ImageTk
 import math
-import time
+import random
 
 class HexagonGame(object):
     def __init__(self, num_rings, img_path):
@@ -22,6 +22,7 @@ class HexagonGame(object):
         self.r = 50
         self.center = ()
         self.baseMask = self.drawMaskImage()
+        self.prevHex = None
         self.run_game()
 
     # Defining the center point of the puzzle
@@ -295,7 +296,6 @@ class HexagonGame(object):
             checkpoint[0] , checkpoint[1] = int(round(checkpoint[0])), int(round(checkpoint[1]))
             if not checkpoint in CurrentCenterPoints:
                 clockposition = i
-        print clockposition
         clock1200 = [0.0, -np.sqrt(3) * self.r]
         clock0600 = [0.0, +np.sqrt(3) * self.r]
         clock0200 = [3.0 * self.r / 2.0, -np.sqrt(3) * self.r / 2.0]
@@ -331,12 +331,23 @@ class HexagonGame(object):
         if n == 10:
             self.moving = False
             return
-    def scramble(self):
-        for hex in self.hexIDs:
-            #if hex
-            pass
-        pass
-
+    def scramble(self, n):
+        if self.numRings == 3:
+            numRand = 20
+        elif self.numRings == 2:
+            numRand = 10
+        if n < numRand:
+            potentialMoves = {}
+            for hex in self.hexIDs:
+                move = self.getMoves(hex)
+                if move:
+                    potentialMoves[hex] = move
+            selectedHex = random.choice(potentialMoves.keys())
+            while selectedHex == self.prevHex:
+                selectedHex = random.choice(potentialMoves.keys())
+            self.prevHex = selectedHex
+            self.moveTile(selectedHex, potentialMoves[selectedHex], 0)
+            self.root.after(400, self.scramble, n + 1)
 
     def checkWin(self):
         for hex in self.hexIDs:
@@ -352,6 +363,7 @@ class HexagonGame(object):
     def run_game(self):
         # Standard Tkinter stuff
         root = Tk()
+        root.title("Hexagon Puzzle Game!")
         self.root = root
         Tk.title = "Making Board Game"
 
@@ -380,11 +392,11 @@ class HexagonGame(object):
             self.images[hex] = imgId
             self.canvas1.tag_raise(hex)
             root.update()
-
+        self.scramble(0)
         # tiles moving etc etc
         # self.checkWin()
 
         root.mainloop()
 
-HexagonGame(2, "images/797668ad0ebe3e0da96f51f967641971.jpg")
+HexagonGame(3, "images/Rainbow_Gradient.jpg")
 
