@@ -9,6 +9,8 @@ class HexagonGame(object):
         self.imgPath = img_path
         self.rings = []
         self.hexIDs = []  # A list of IDs for all your hexagons
+        self.removedList = []
+        self.boundaryIDs = []
         self.imgIDs = []
         self.images = {}
         self.canvas1 = None
@@ -123,9 +125,78 @@ class HexagonGame(object):
         for hex in self.hexIDs:
             if int(self.canvas1.gettags(hex)[1]) == 100:
                 self.canvas1.delete(hex)
-                removedList.append(hex)
-        for item in removedList:
+                self.removedList.append(hex)
+        for item in self.removedList:
             self.hexIDs.remove(item)
+
+        self.boundary()
+
+    def boundary(self):
+        for m in range(-4, 5):
+            for n in range(-4, 5):
+                colour = "black"
+                outline = "pink"
+
+                hexCenter = self.center_point(m, n)
+
+                # Grabbing the canvas center point (x, y)
+                xCenter = self.center[0]
+                yCenter = self.center[1]
+                CanvasCenter = np.array([xCenter, yCenter])
+
+                # Hexagons will fall onto ring 4, a boundry ring for movement
+                # Calculates the magnitude of the vector between center point of the created hexagon and canvas center
+                # Divides the distance by the radius of the circle enclosing the hexagons
+                # Given distance determines the ring that the hexagon is on
+                ring_radius = np.linalg.norm(hexCenter - CanvasCenter) / self.r
+                ring_radius = round(ring_radius, 5)
+
+                pointsB = []
+
+                if self.numRings == 2:
+                    if 4.0 < ring_radius < 5.5:
+                        for k in range(6):
+                            # Setting up creation of 6 points forming hexagon shape
+
+                            x, y = hexCenter[0] + self.r * np.cos(k * np.pi / 3), hexCenter[1] + self.r * np.sin(
+                                k * np.pi / 3)
+                            # Point (x, y) from hexagon radius to create the  points from its designated center point
+                            pointsB.extend([x, y])
+                            # Extending it all into a list
+
+                        # Connecting all points together forming the hexagon and giving it a hexagon identification number
+                        newBoundaryID = self.canvas1.create_polygon(pointsB, fill=colour, outline=outline,
+                                                                    width=3)
+                        self.boundaryIDs.append(newBoundaryID)
+                        # Appending hexagon identification into a list
+                        # Calling a method with image name from mask and adding it as a tag
+                        # Placeholder for the time being
+
+                        # Adding tags to each hexagon: Identification, Ring Number, x Center Value, y Center Value
+                        self.canvas1.itemconfig(newBoundaryID, tags=(newBoundaryID, ring_radius))
+
+                if self.numRings == 3:
+                    if 5.5 < ring_radius < 7:
+
+                        for k in range(6):
+                            # Setting up creation of 6 points forming hexagon shape
+
+                            x, y = hexCenter[0] + self.r * np.cos(k * np.pi / 3), hexCenter[1] + self.r * np.sin(
+                                k * np.pi / 3)
+                            # Point (x, y) from hexagon radius to create the  points from its designated center point
+                            pointsB.extend([x, y])
+                            # Extending it all into a list
+
+                        # Connecting all points together forming the hexagon and giving it a hexagon identification number
+                        newBoundaryID = self.canvas1.create_polygon(pointsB, fill=colour, outline=outline,
+                                                                    width=3)
+                        self.boundaryIDs.append(newBoundaryID)
+                        # Appending hexagon identification into a list
+                        # Calling a method with image name from mask and adding it as a tag
+                        # Placeholder for the time being
+
+                        # Adding tags to each hexagon: Identification, Ring Number, x Center Value, y Center Value
+                        self.canvas1.itemconfig(newBoundaryID, tags=(newBoundaryID, ring_radius))
 
     ################################################## Image Masking ##################################################
     def maskImage(self, imgToMask):
@@ -184,6 +255,10 @@ class HexagonGame(object):
     # Defining a method that registers mouse clicks and changes hexagon colour to red
     def click(self, event):
         if self.canvas1.find_withtag(CURRENT):
+            if int(self.canvas1.gettags(CURRENT)[0]) in self.removedList:
+                return
+            if int(self.canvas1.gettags(CURRENT)[0]) in self.boundaryIDs:
+                return
             # CURRENT takes in all the tags from the currently clicked hexagon tile
             colour = "red"
             self.canvas1.itemconfig(CURRENT, fill=colour)
