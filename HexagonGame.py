@@ -2,6 +2,7 @@ from Tkinter import *
 import numpy as np
 from scipy import misc
 from PIL import Image, ImageDraw, ImageTk
+import math
 
 class HexagonGame(object):
     def __init__(self, num_rings, img_path):
@@ -108,7 +109,7 @@ class HexagonGame(object):
                         # Extending it all into a list
 
                     # Connecting all points together forming the hexagon and giving it a hexagon identification number
-                    newHexID = self.canvas1.create_polygon(points, activefill="yellow", fill="", outline=outline, width=3)
+                    newHexID = self.canvas1.create_polygon(points, activefill="yellow", fill="",outline=outline, width=3)
                     self.hexIDs.append(newHexID)
                     # Appending hexagon identification into a list
                     # Calling a method with image name from mask and adding it as a tag
@@ -252,6 +253,14 @@ class HexagonGame(object):
         return self.maskImage(bg.crop(cropBox))
     ###################################################################################################################
 
+    def getAllCurrentCenterPoints(self):
+        listCenPoints = []
+        for hex in self.hexIDs:
+            center = self.canvas1.coords(hex)[:2]
+            center[0] = center[0] - self.r
+            center[0] , center[1] = int(round(center[0])) , int(round(center[1]))
+            listCenPoints.append(center)
+        return listCenPoints
     # Defining a method that registers mouse clicks and changes hexagon colour to red
     def click(self, event):
         if self.canvas1.find_withtag(CURRENT):
@@ -261,13 +270,26 @@ class HexagonGame(object):
                 return
             # CURRENT takes in all the tags from the currently clicked hexagon tile
             colour = "red"
+            hexId = self.canvas1.gettags(CURRENT)[0]
+            print self.getMoves(hexId)
             self.canvas1.itemconfig(CURRENT, fill=colour)
             self.canvas1.update()
 
-    def moves(self):
+
+    def getMoves(self,hexId):
         # Picks the correct move
         # The moves are set up in the clock face
-        moveDirection = None
+        #print self.canvas1.coords(hexId)
+        centerpoint = self.canvas1.coords(hexId)[:2]
+        centerpoint[0] = centerpoint[0] - self.r
+        clockposition = -1
+        for i in range(0,6,1):
+            checkpoint = [centerpoint[0] + math.sqrt(3)*self.r*math.cos(math.radians(30 + 60*i)), centerpoint[1] + math.sqrt(3)*self.r*math.sin(math.radians(30 + 60*i))]
+            CurrentCenterPoints = self.getAllCurrentCenterPoints()
+            checkpoint[0] , checkpoint[1] = int(round(checkpoint[0])), int(round(checkpoint[1]))
+            if not checkpoint in CurrentCenterPoints:
+                clockposition = i
+
         clock1200 = [0.0, -np.sqrt(3) * self.r]
         clock0600 = [0.0, +np.sqrt(3) * self.r]
         clock0200 = [3.0 * self.r / 2.0, -np.sqrt(3) * self.r / 2.0]
@@ -275,7 +297,16 @@ class HexagonGame(object):
         clock1000 = [-3.0 * self.r / 2.0, -np.sqrt(3) * self.r / 2.0]
         clock0800 = [-3.0 * self.r / 2.0, +np.sqrt(3) * self.r / 2.0]
 
-        return moveDirection
+        positions = {}
+        positions[0] = clock1000
+        positions[1] = clock1200
+        positions[2] = clock0200
+        positions[3] = clock0400
+        positions[4] = clock0600
+        positions[5] = clock0800
+        if clockposition == -1:
+            return False
+        return positions[clockposition]
         # dx, dy = random.choice(direction)  # Total move to perform.
         # self.canvas1.move(self.hexID, dx, dy)
 
