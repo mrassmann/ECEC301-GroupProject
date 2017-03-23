@@ -330,6 +330,7 @@ class HexagonGame(object):
             self.root.after(20, self.moveTile, hexId, moveToMake, n + 1)
         if n == 10:
             self.moving = False
+            self.checkWin()
             return
     def scramble(self):
         for hex in self.hexIDs:
@@ -340,13 +341,13 @@ class HexagonGame(object):
 
     def checkWin(self):
         for hex in self.hexIDs:
-            if self.canvas1.gettags(hex)[2] == self.canvas1.gettags(hex)[4] and self.canvas1.gettags(hex)[3] == self.canvas1.gettags(hex)[5]:
-                # tags 4 and 5 need to be updated x, y center points as tiles are moved
-                # moving of tiles should
-                # need tag 4 to be current x position after tiles have been moved(solved)
-                # need tag 5 to be current y position after tiles have been moved(solved)
-                pass
-        pass
+            currCenter = self.canvas1.coords(hex)[:2]
+            currCenter[0] = currCenter[0] - self.r
+            currX, currY = int(round(currCenter[0])), int(round(currCenter[1]))
+            correctX, correctY = self.canvas1.gettags(hex)[2], self.canvas1.gettags(hex)[3]
+            print currX, currY, correctX, correctY
+            if correctX == currX and correctY == currY:
+                print "here"
 
     # Defining a method that starts the game
     def run_game(self):
@@ -382,7 +383,6 @@ class HexagonGame(object):
             root.update()
 
         # tiles moving etc etc
-        # self.checkWin()
 
         root.mainloop()
 
