@@ -29,6 +29,8 @@ class HexagonGame(object):
         self.solveStack = []
         self.solveButton = None
         ## Clear the bgImages directory
+        if not os.path.exists("bgImages"):
+            os.makedirs("bgImages")
         for file in os.listdir("bgImages"):
             os.remove("bgImages/"+file)
         self.run_game()
