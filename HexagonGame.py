@@ -4,9 +4,10 @@ from scipy import misc
 from PIL import Image, ImageDraw, ImageTk
 import math
 import random
+import os
 
 class HexagonGame(object):
-    def __init__(self, num_rings, img_path):
+    def __init__(self, num_rings, img_path, radius):
         self.numRings = num_rings
         self.imgPath = img_path
         self.rings = []
@@ -19,11 +20,17 @@ class HexagonGame(object):
         self.moving = False
         self.canvas1 = None
         self.label1 = None
-        self.r = 50
+        self.r = radius
         self.center = ()
         self.baseMask = self.drawMaskImage()
         self.prevHex = None
         self.fullPic = None
+        self.label1 = None
+        self.solveStack = []
+        self.solveButton = None
+        ## Clear the bgImages directory
+        for file in os.listdir("bgImages"):
+            os.remove("bgImages/"+file)
         self.run_game()
 
     # Defining the center point of the puzzle
@@ -140,8 +147,8 @@ class HexagonGame(object):
     def boundary(self):
         for m in range(-4, 5):
             for n in range(-4, 5):
-                colour = "black"
-                outline = "pink"
+                colour = ""
+                outline = ""
 
                 hexCenter = self.center_point(m, n)
 
@@ -229,7 +236,11 @@ class HexagonGame(object):
         # Mask the image and save it
         maskedImage = np.ma.masked_array(imgToMask, mask=mask)
         maskedImage = maskedImage.filled([0, 0, 0, 0])
-        return misc.toimage(maskedImage, cmin=0.0, cmax=256.0)
+        imageName = "bgImages/img" + str(random.randint(0, 1000)) + ".png"
+        while imageName in os.listdir("bgImages"):
+            imageName = "bgImages/img" + str(random.randint(0, 1000)) + ".png"
+        misc.imsave(imageName, maskedImage)
+        return imageName
 
     # Returns the points on a hexagon centered at 50, 50 for this demo
     def hexagonPoints(self, imageSize):
@@ -282,12 +293,12 @@ class HexagonGame(object):
             moveToMake = self.getMoves(hexId)
             self.moveTile(hexId, moveToMake, 0)
             self.canvas1.update()
+            self.solveStack.append(hexId)
 
 
     def getMoves(self,hexId):
         # Picks the correct move
         # The moves are set up in the clock face
-        #print self.canvas1.coords(hexId)
         centerpoint = self.canvas1.coords(hexId)[:2]
         centerpoint[0] = centerpoint[0] - self.r
         clockposition = -1
@@ -349,6 +360,7 @@ class HexagonGame(object):
                 selectedHex = random.choice(potentialMoves.keys())
             self.prevHex = selectedHex
             self.moveTile(selectedHex, potentialMoves[selectedHex], 0)
+            self.solveStack.append(selectedHex)
             self.root.after(400, self.scramble, n + 1)
 
     def checkWin(self):
@@ -368,6 +380,17 @@ class HexagonGame(object):
             for imgId in self.imgIDs:
                 self.canvas1.delete(imgId)
             self.canvas1.create_image(500, 500, image=self.fullPic)
+            self.label1.destroy()
+            self.solveButton.destroy()
+            Button(self.root,text="Quit", command=quit).grid(row=1, column=0)
+
+    def solve(self, n):
+        if n < len(self.solveStack):
+            hex = self.solveStack.pop()
+            move = self.getMoves(hex)
+            self.moveTile(hex,move,0)
+            self.root.after(400, self.solve, n)
+            self.checkWin()
     # Defining a method that starts the game
     def run_game(self):
         # Standard Tkinter stuff
@@ -379,8 +402,10 @@ class HexagonGame(object):
         # Creating the canvas for the game
         canvas1 = Canvas(self.root, width=1000, height=1000, bg="white", highlightthickness=0, bd=0)
         canvas1.grid(row=0, column=0)
-        label1 = Label(self.root, text="Move mouse over hexagons and click them")
-        label1.grid_configure(row=1, column=0)
+        self.label1 = Label(self.root, text="Move mouse over hexagons and click them")
+        self.label1.grid_configure(row=1, column=0)
+        self.solveButton = Button(self.root, text="Solve", command=lambda: self.solve(0))
+        self.solveButton.grid(row=1, column=1)
         self.canvas1 = canvas1
         self.canvas1.bind('<ButtonPress-1>', self.click)
 
@@ -394,19 +419,16 @@ class HexagonGame(object):
         for hex in self.hexIDs:
             x = int(self.canvas1.gettags(hex)[2])
             y = int(self.canvas1.gettags(hex)[3])
-            hexBG = ImageTk.PhotoImage(self.sliceBackground(x, y))
-            print hexBG
+            hexBG = ImageTk.PhotoImage(file = self.sliceBackground(x, y))
             imgId = self.canvas1.create_image(x, y, image=hexBG)
             self.imgIDs.append(imgId)
             self.backgroundsDONTUSE[hex] = hexBG
             self.images[hex] = imgId
             self.canvas1.tag_raise(hex)
             root.update()
-        #self.scramble(0)
+        self.scramble(0)
         self.fullPic = ImageTk.PhotoImage(file=self.imgPath)
         # tiles moving etc etc
 
         self.root.mainloop()
-
-#HexagonGame(3, "images/Rainbow_Gradient.jpg")
 
