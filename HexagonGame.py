@@ -23,6 +23,7 @@ class HexagonGame(object):
         self.center = ()
         self.baseMask = self.drawMaskImage()
         self.prevHex = None
+        self.fullPic = None
         self.run_game()
 
     # Defining the center point of the puzzle
@@ -351,27 +352,34 @@ class HexagonGame(object):
             self.root.after(400, self.scramble, n + 1)
 
     def checkWin(self):
+        won = True
         for hex in self.hexIDs:
             currCenter = self.canvas1.coords(hex)[:2]
             currCenter[0] = currCenter[0] - self.r
             currX, currY = int(round(currCenter[0])), int(round(currCenter[1]))
-            correctX, correctY = self.canvas1.gettags(hex)[2], self.canvas1.gettags(hex)[3]
-            print currX, currY, correctX, correctY
-            if correctX == currX and correctY == currY:
-                print "here"
-
+            correctX, correctY = int(self.canvas1.gettags(hex)[2]), int(self.canvas1.gettags(hex)[3])
+            if correctX != currX or correctY != currY:
+                won = False
+        if won == True:
+            for hex in self.hexIDs:
+                self.canvas1.delete(hex)
+            for hex in self.boundaryIDs:
+                self.canvas1.delete(hex)
+            for imgId in self.imgIDs:
+                self.canvas1.delete(imgId)
+            self.canvas1.create_image(500, 500, image=self.fullPic)
     # Defining a method that starts the game
     def run_game(self):
         # Standard Tkinter stuff
-        root = Tk()
+        root = Toplevel()
         root.title("Hexagon Puzzle Game!")
         self.root = root
         Tk.title = "Making Board Game"
 
         # Creating the canvas for the game
-        canvas1 = Canvas(root, width=1000, height=1000, bg="white", highlightthickness=0, bd=0)
+        canvas1 = Canvas(self.root, width=1000, height=1000, bg="white", highlightthickness=0, bd=0)
         canvas1.grid(row=0, column=0)
-        label1 = Label(root, text="Move mouse over hexagons and click them")
+        label1 = Label(self.root, text="Move mouse over hexagons and click them")
         label1.grid_configure(row=1, column=0)
         self.canvas1 = canvas1
         self.canvas1.bind('<ButtonPress-1>', self.click)
@@ -387,16 +395,18 @@ class HexagonGame(object):
             x = int(self.canvas1.gettags(hex)[2])
             y = int(self.canvas1.gettags(hex)[3])
             hexBG = ImageTk.PhotoImage(self.sliceBackground(x, y))
+            print hexBG
             imgId = self.canvas1.create_image(x, y, image=hexBG)
-            self.imgIDs = imgId
+            self.imgIDs.append(imgId)
             self.backgroundsDONTUSE[hex] = hexBG
             self.images[hex] = imgId
             self.canvas1.tag_raise(hex)
             root.update()
-        self.scramble(0)
+        #self.scramble(0)
+        self.fullPic = ImageTk.PhotoImage(file=self.imgPath)
         # tiles moving etc etc
 
-        root.mainloop()
+        self.root.mainloop()
 
-HexagonGame(3, "images/Rainbow_Gradient.jpg")
+#HexagonGame(3, "images/Rainbow_Gradient.jpg")
 

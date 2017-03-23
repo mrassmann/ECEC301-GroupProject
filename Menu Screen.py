@@ -1,6 +1,11 @@
 from Tkinter import *
-from PIL import ImageTk, Image
-
+import os
+import HexagonGame
+def startGame():
+    path = "images\\" + selectedImage
+    print path
+    hexGame = HexagonGame.HexagonGame(3, path)
+    hexGame.startGame()
 project_root = Tk()
 project_root.title("Team 6 Hexagonal Puzzle Game")
 project_root.minsize(500,500)
@@ -21,38 +26,26 @@ image_indicator = Label(project_root, text="Image: None", bg="gold", width=40)
 image_indicator.grid(row=1, column=2, columnspan=2)
 
 image_menu = Menu(image_button, tearoff=1)
-
+global selectedImage
 def update_image(image):
     global default_image
+    global selectedImage
     image_indicator.configure(text=image)
+    selectedImage = image
     print "You selected %s" % image
 
-#imageFiles = (add images, couldn't download them correctly)
-
+imageFiles = os.listdir("images")
 for image in imageFiles:
     image_menu.add_command(label=image, command=lambda image=image: update_image(image))
 image_button.configure(menu=image_menu)
 
 #Opens Image in New Window
-def openimage():
-    top = Toplevel()
-    top.title("Team 6 Hexagonal Puzzle Game")
-    top.minsize(500, 500)
-    canvas = Canvas(top, width=300, height=200)
-    canvas.pack(expand=YES, fill=BOTH)
-    for image in imageFiles:
-        if imageFiles[image] == image_button:
-            gif1= PhotoImage(file=imageFiles[image])
-            canvas.create_image(50, 10, image=gif1, anchor=NW)
-            canvas.gif1 = gif1
 
-start_button = Button(project_root, text="START", command=openimage)
+
+start_button = Button(project_root, text="START", command=startGame)
 start_button.grid(row=5, column=3)
 
 quit_button = Button(project_root, text='QUIT', command=project_root.quit)
 quit_button.grid(row=6, column=0, sticky=W, pady=4)
-
-generation_image = ImageTk.PhotoImage(Image.open("images/letsplay.jpeg"))
-Label(project_root, image=generation_image).grid(row=7, column=0, columnspan=4)
 
 project_root.mainloop( )
