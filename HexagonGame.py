@@ -400,9 +400,7 @@ class HexagonGame(object):
     def run_game(self):
         # Standard Tkinter stuff
         root = Toplevel()
-        root.title("Hexagon Puzzle Game!")
         self.root = root
-        Tk.title = "Making Board Game"
 
         # Creating the canvas for the game
         canvas1 = Canvas(self.root, width=1000, height=1000, bg="white", highlightthickness=0, bd=0)
