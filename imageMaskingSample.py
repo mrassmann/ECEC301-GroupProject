@@ -11,7 +11,13 @@ cY = 50
 # Creates the mask and masks the image
 # PARAM (maskBase) - Base image the mask is derived from
 def maskImage(maskBase):
-    image = misc.imread("canvas_rose_red.gif")
+    bg = Image.open("images/blueDragon.jpg").copy()
+    x, y = bg.size[0]/2, bg.size[1]/2
+    image = sliceBackground(bg, x, y)
+    if image.mode == "RGB":
+        image = np.array(image.getdata()).reshape(image.size[0], image.size[1], 3)
+    else:
+        image = np.array(image.getdata()).reshape(image.size[0], image.size[1], 4)
     row, col, z = image.shape
     # Getting base image data to create the mask
     mask = np.array(maskBase.getdata()).reshape(maskBase.size[0], maskBase.size[1], 3)
@@ -19,7 +25,7 @@ def maskImage(maskBase):
     # Creating the mask
     if z == 3:
         image = np.dstack((image, np.full((row, col), 255)))
-        mask = np.dstack((mask, np.full((row, col), 255)))
+        mask = np.dstack((mask, np.full((mask.shape[0], mask.shape[1]), 255)))
     for r in range(0, row):
         for c in range(0, col):
             if np.all(mask[r][c] == [0, 0, 0, 255]):
@@ -49,6 +55,14 @@ def drawMaskImage():
     hexagon = hexagonPoints()
     draw.polygon(hexagon, fill='black')
     maskImage(image2)
+
+def sliceBackground(im, x, y):
+    left = x - r
+    upper = y - r
+    right = x + r
+    lower = y + r
+    cropBox = (left, upper, right, lower)
+    return im.crop(cropBox)
 
 drawMaskImage()
 
