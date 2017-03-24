@@ -288,7 +288,10 @@ class HexagonGame(object):
     # Defining a method that registers mouse clicks and changes hexagon colour to red
     def click(self, event):
         if self.canvas1.find_withtag(CURRENT):
-            if int(self.canvas1.gettags(CURRENT)[0]) in self.boundaryIDs or self.moving:
+            try:
+                if int(self.canvas1.gettags(CURRENT)[0]) in self.boundaryIDs or self.moving:
+                    return
+            except ValueError:
                 return
             # CURRENT takes in all the tags from the currently clicked hexagon tile
             hexId = self.canvas1.gettags(CURRENT)[0]
